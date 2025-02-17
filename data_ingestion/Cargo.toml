@@ -1,0 +1,42 @@
+[package]
+name = "data_ingestion"
+version = "0.1.0"
+edition = "2024"
+build="src/build.rs"
+
+[dependencies]
+anyhow = { workspace = true }
+arrow = { workspace = true }
+bincode = { workspace = true }
+bytes = { workspace = true }
+chrono = { workspace = true }
+config = { workspace = true }
+crossbeam = { workspace = true }
+csv = { workspace = true }
+dotenvy = { workspace = true }
+env_logger = { workspace = true }
+futures-util = { workspace = true }
+log = { workspace = true }
+parquet = { workspace = true }
+prost = { workspace = true }
+prost-types = { workspace = true }
+rayon = { workspace = true }
+rdkafka = { workspace = true }
+reqwest = { workspace = true }
+schema_registry_converter = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+tokio = { workspace = true }
+tokio-tungstenite = { workspace = true }
+
+[build-dependencies]
+prost-build = "0.13.4"
+
+[lib]
+name="data_ingestion"
+path="src/lib.rs"
+
+[[bin]]
+name="data_ingestion"
+path="src/main.rs"

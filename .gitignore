@@ -1,0 +1,12 @@
+**/target
+**/Cargo.lock
+**/websocket.toml
+docker-compose.yml
+**/uv.lock
+**/__pycache__/
+**/*.py[oc]
+**/build/
+**/dist/
+**/wheels/
+**/*.egg-info
+**/.venv

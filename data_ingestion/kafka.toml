@@ -1,0 +1,8 @@
+instrument_key="BSE_EQ|INE155A01022"
+broker_url="localhost:9092"
+message_timeout_ms="30000"
+compression_type="snappy"
+queue_buffer_max_msg="100000"
+batch_num_messages="10000"
+linger_ms="10"
+enable_idempotence="true"
