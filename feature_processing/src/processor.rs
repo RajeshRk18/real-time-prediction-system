@@ -117,6 +117,27 @@ fn extract_features(df: DataFrame) -> Result<Features> {
         .drop_nulls(None)
         .collect()?;
 
+    let price_change = df.column("price_change")?.tail(Some(1)).f64()?.get(0).unwrap_or(0.0);
+
+    let price_momentum = df.column("price_momentum")?.tail(Some(1)).f64()?.get(0).unwrap_or(0.0);
+    let price_volatility = df.column("price_volatility")?.tail(Some(1)).f64()?.get(0).unwrap_or(0.0);
+    let volume_momentum = df.column("volume_momentum")?.tail(Some(1)).f64()?.get(0).unwrap_or(0.0);
+    let volume_ratio = df.column("volume_ratio")?.tail(Some(1)).f64()?.get(0).unwrap_or(0.0);
+    let price_acceleration = df.column("price_acceleration")?.tail(Some(1)).f64()?.get(0).unwrap_or(0.0);
+
+    let features = Features {
+        price_change,
+        price_momentum,
+        price_volatility,
+        volume_ratio,
+        volume_momentum,
+        price_acceleration,
+    };
+
+    Ok(features)
+}
+
+
     /*let close = df.column("close")?;
     let volume = df.column("volume")?;
 
@@ -162,25 +183,3 @@ fn extract_features(df: DataFrame) -> Result<Features> {
     let volume_ratio = volume / &volume_rolling_mean;
     // price_acceleration: first difference of price_change
     let price_acceleration = diff(&price_change_s, 1, NullBehavior::Ignore)?;*/
-
-    let price_change = df.column("price_change")?.tail(Some(1)).f64()?.get(0).unwrap_or(0.0);
-
-    let price_momentum = df.column("price_momentum")?.tail(Some(1)).f64()?.get(0).unwrap_or(0.0);
-    let price_volatility = df.column("price_volatility")?.tail(Some(1)).f64()?.get(0).unwrap_or(0.0);
-    let volume_momentum = df.column("volume_momentum")?.tail(Some(1)).f64()?.get(0).unwrap_or(0.0);
-    let volume_ratio = df.column("volume_ratio")?.tail(Some(1)).f64()?.get(0).unwrap_or(0.0);
-    let price_acceleration = df.column("price_acceleration")?.tail(Some(1)).f64()?.get(0).unwrap_or(0.0);
-
-    let features = Features {
-        price_change,
-        price_momentum,
-        price_volatility,
-        volume_ratio,
-        volume_momentum,
-        price_acceleration,
-    };
-
-    Ok(features)
-}
-
-

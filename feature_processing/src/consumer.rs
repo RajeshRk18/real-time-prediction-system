@@ -13,16 +13,15 @@ use std::time::Duration;
 
 pub struct KafkaConsumer {
     consumer: StreamConsumer,
-    handler: mpsc::Receiver<InputData>,
     processor_handler: mpsc::Sender<InputData>,
 }
 
 impl KafkaConsumer {
-    pub async fn new(handler: mpsc::Receiver<InputData>, processor_handler: mpsc::Sender<InputData>) -> Result<Self> {
+    pub async fn new(processor_handler: mpsc::Sender<InputData>) -> Result<Self> {
         let consumer: StreamConsumer = ClientConfig::new()
-        .set("group.id", "feature-engineering-group")
-        .set("bootstrap.servers", "localhost:9092")
-        // Automatically commit offsets (for simplicity)
+        .set("group.id", "feature-processing-group")
+        .set("bootstrap.servers", "kafka:9092")
+        // Automatically commit offsets
         .set("enable.auto.commit", "true")
         // Start from the earliest available message
         .set("auto.offset.reset", "earliest")
@@ -35,7 +34,6 @@ impl KafkaConsumer {
 
         Ok(Self {
             consumer,
-            handler,
             processor_handler,
         })
     }

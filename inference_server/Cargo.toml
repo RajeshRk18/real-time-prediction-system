@@ -16,6 +16,7 @@ bincode = { workspace = true }
 ndarray = "0.16.1"
 onnxruntime = "0.0.14"
 feature_processing = { path = "../feature_processing" }
+data_ingestion = { path = "../data_ingestion" }
 axum = "0.8.1"
 parking_lot = "0.12.3"
 

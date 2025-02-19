@@ -3,7 +3,7 @@ use reqwest::Client;
 use std::collections::HashMap;
 use tokio::sync::mpsc;
 use tokio::time::{Duration, sleep};
-//use chrono::{Local, NaiveTime, Weekday};
+use chrono::{Timelike, Utc, TimeZone, Local, NaiveDate};
 use bytes::BytesMut;
 use futures_util::{SinkExt, stream::StreamExt};
 use log::{error, info};
@@ -44,6 +44,8 @@ pub struct InputData {
 
 pub struct StockDataStream {
     config: WebSocketConfig,
+    access_token: String,
+    last_token_request_date: Option<NaiveDate>,
     // producer handle
     kafka_handler: mpsc::Sender<InputData>,
 }
@@ -55,15 +57,41 @@ impl StockDataStream {
     ) -> Self {
         Self {
             config,
+            access_token: String::new(),
             kafka_handler,
         }
     }
 
     pub async fn authorize(&mut self) -> Result<()> {
+        let now_utc = Utc::now();
+        // UTC +5:30 = UTC + 60 mins * 60 secs * 5 hours + 30 mins * secs
+        let offset = chrono::FixedOffset::east_opt(5 * 3600 + 1800).expect("Cannot offset UTC");
+        let ist = now_utc.with_timezone(&offset);
+
+        // Define the trigger time (3:30 AM IST)
+        let trigger_time = NaiveTime::from_hms_opt(3, 30, 0).unwrap();
+        let today = ist.date_naive();
+        let trigger_datetime = today.and_time(trigger_time);
+
+        // Check if we are past 3:30 AM IST
+        if ist.time() >= trigger_time {
+            let last_request_day = self.last_token_request_date.expect("Date not updated");
+
+            if last_request_day != today {
+                info!("Access token expired. Requesting new access token..");
+                self.request_access_token().await?;
+                self.last_token_request_date = Some(today);
+            } else {
+                info!("Token already requested today, skipping request.");
+            }
+        } else {
+            info!("Valid access token");
+        }
+
         // Get authoried url to fetch data
         let get_auth_redirect_url = "https://api.upstox.com/v3/feed/market-data-feed/authorize";
         let mut bearer_token = String::from("Bearer ");
-        bearer_token.push_str(&self.config.access_token);
+        bearer_token.push_str(&self.access_token);
 
         let client = Client::new();
 
@@ -75,7 +103,6 @@ impl StockDataStream {
             .await?;
 
         let json_resp: serde_json::Value = response.json().await?;
-        println!("{:?}", json_resp);
         let redirect_uri = json_resp["data"]["authorized_redirect_uri"]
             .as_str()
             .expect("Redirect URI Not found");
@@ -128,12 +155,6 @@ impl StockDataStream {
                         }
                     }
                 }
-                Ok(Message::Text(text)) => {
-                    println!("Received text message: {}", text);
-                }
-                Ok(other) => {
-                    println!("Received other message: {:?}", other);
-                }
                 Err(e) => {
                     eprintln!("Error reading message: {}", e);
                     break;
@@ -144,7 +165,7 @@ impl StockDataStream {
         Ok(())
     }
 
-    pub async fn reauthorize(&mut self) -> Result<(), DataIngestionError> {
+    pub async fn request_access_token(&mut self) -> Result<(), DataIngestionError> {
         // LOGIN
         let auth_url = format!(
             "{:?}?client_id={:?}&redirect_uri={:?}&response_type=code",
@@ -194,7 +215,8 @@ impl StockDataStream {
             eprintln!("Error: {}", error_text);
         }
 
-        let req_token_url = "https://api.upstox.com/v3/login/auth/token/request/:client_id";
+        let mut req_token_url = "https://api.upstox.com/v3/login/auth/token/request/:";
+        req_token_url.push_str(&self.config.api_key);
         let client = Client::new();
         let param = AccessTokenRequest {
             client_id: &self.config.api_secret_key,
@@ -206,7 +228,7 @@ impl StockDataStream {
             .json(&param)
             .send()
             .await?;
-
+        
         Ok(())
     }
 

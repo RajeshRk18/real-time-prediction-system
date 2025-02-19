@@ -14,18 +14,16 @@ pub struct KafkaProducer {
     producer: FutureProducer,
     receiver_handle: mpsc::Receiver<Features>,
     topic: String,
-    config: KafkaBrokerConfig,
 }
 
 impl KafkaProducer {
     pub async fn new(
         topic: &str,
-        config: KafkaBrokerConfig,
         receiver_handle: mpsc::Receiver<DataFrame>,
     ) -> Result<Self> {
         info!("🚀Configuring Kafka Producer...");
         let producer: FutureProducer = ClientConfig::new()
-            .set("bootstrap.servers", "localhost:9095")
+            .set("bootstrap.servers", "kafka:9092")
             .set("message.timeout.ms", "30000")
             .set("compression.type", "snappy")
             .set("queue.buffering.max.messages", "100000")
@@ -39,7 +37,6 @@ impl KafkaProducer {
             producer,
             receiver_handle,
             topic: topic.to_string(),
-            config,
         })
     }
 
@@ -51,7 +48,7 @@ impl KafkaProducer {
         Ok(())
     }
 
-    pub async fn produce(&self, data: InputData) -> Result<()> {
+    async fn produce(&self, data: InputData) -> Result<()> {
         let value = bincode::serialize(&data)?;
         // Create Kafka record
         let record = FutureRecord::to(&self.topic)

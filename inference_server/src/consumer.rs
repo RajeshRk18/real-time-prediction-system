@@ -23,7 +23,7 @@ impl KafkaConsumer {
     pub async fn new(handler: mpsc::Receiver<InputData>, processor_handler: mpsc::Sender<InputData>) -> Result<Self> {
         let consumer: StreamConsumer = ClientConfig::new()
         .set("group.id", "feature-engineering-group")
-        .set("bootstrap.servers", "localhost:9095")
+        .set("bootstrap.servers", "kafka:9092")
         .set("enable.auto.commit", "true")
         .set("auto.offset.reset", "earliest")
         .create()?;
