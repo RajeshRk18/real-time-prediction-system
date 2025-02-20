@@ -1,6 +1,5 @@
-use polars::prelude::DataFrame;
 use anyhow::Result;
-use log::{debug, error, warn};
+use log::{debug, error};
 use rdkafka::ClientConfig;
 use rdkafka::producer::{FutureProducer, FutureRecord};
 use tokio::sync::mpsc;
@@ -19,7 +18,7 @@ pub struct KafkaProducer {
 impl KafkaProducer {
     pub async fn new(
         topic: &str,
-        receiver_handle: mpsc::Receiver<DataFrame>,
+        receiver_handle: mpsc::Receiver<Features>,
     ) -> Result<Self> {
         info!("🚀Configuring Kafka Producer...");
         let producer: FutureProducer = ClientConfig::new()
@@ -48,7 +47,7 @@ impl KafkaProducer {
         Ok(())
     }
 
-    async fn produce(&self, data: InputData) -> Result<()> {
+    async fn produce(&self, data: Features) -> Result<()> {
         let value = bincode::serialize(&data)?;
         // Create Kafka record
         let record = FutureRecord::to(&self.topic)

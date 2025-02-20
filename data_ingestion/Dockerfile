@@ -21,7 +21,7 @@ RUN apt-get update && apt-get install -y \
 
 COPY --from=builder /app/target/release/data_ingestion /usr/local/bin/
 COPY data_ingestion/kafka.toml /etc/
-COPY data_ingestion/websocket.toml /etc
+COPY data_ingestion/websocket.toml /etc/
 COPY data_ingestion/proto /proto
 
 CMD ["data_ingestion"]

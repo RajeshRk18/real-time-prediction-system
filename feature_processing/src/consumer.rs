@@ -1,15 +1,11 @@
-use crate::misc::InputData;
+use data_ingestion::fetcher::InputData;
 use futures_util::StreamExt;
 use tokio::sync::mpsc;
-use tokio::time::sleep;
 use rdkafka::{ClientConfig, message::Message};
 use rdkafka::consumer::{StreamConsumer, Consumer};
 use bincode;
-use serde::{Serialize, Deserialize};
 use anyhow::Result;
 use log::{info, error, debug};
-use std::str;
-use std::time::Duration;
 
 pub struct KafkaConsumer {
     consumer: StreamConsumer,

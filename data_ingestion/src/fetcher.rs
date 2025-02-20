@@ -3,7 +3,7 @@ use reqwest::Client;
 use std::collections::HashMap;
 use tokio::sync::mpsc;
 use tokio::time::{Duration, sleep};
-use chrono::{Timelike, Utc, TimeZone, Local, NaiveDate};
+use chrono::{Utc, NaiveDate, NaiveTime};
 use bytes::BytesMut;
 use futures_util::{SinkExt, stream::StreamExt};
 use log::{error, info};
@@ -58,6 +58,7 @@ impl StockDataStream {
         Self {
             config,
             access_token: String::new(),
+            last_token_request_date: None,
             kafka_handler,
         }
     }
@@ -155,8 +156,11 @@ impl StockDataStream {
                         }
                     }
                 }
+                Ok(Message::Pong(_)) => continue,
+                Ok(_) => continue,
+
                 Err(e) => {
-                    eprintln!("Error reading message: {}", e);
+                    eprintln!("Error reading data: {}", e);
                     break;
                 }
             }
@@ -215,7 +219,7 @@ impl StockDataStream {
             eprintln!("Error: {}", error_text);
         }
 
-        let mut req_token_url = "https://api.upstox.com/v3/login/auth/token/request/:";
+        let mut req_token_url = String::from("https://api.upstox.com/v3/login/auth/token/request/:");
         req_token_url.push_str(&self.config.api_key);
         let client = Client::new();
         let param = AccessTokenRequest {

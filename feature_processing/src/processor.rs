@@ -1,9 +1,7 @@
 use anyhow::Result;
 use polars::prelude::*;
-use parking_lot::RwLock;
 use polars::series::ops::NullBehavior;
 use tokio::sync::mpsc;
-use std::sync::Arc;
 use std::collections::VecDeque;
 use crate::misc::Features;
 use data_ingestion::fetcher::InputData;
@@ -43,7 +41,6 @@ impl WindowedMarketDataStream {
         }
         Ok(())
     }
-
 
     fn to_dataframe(&self) -> Result<DataFrame> {
         let close: Vec<f64> = self.data.iter().map(|d| d.close).collect();

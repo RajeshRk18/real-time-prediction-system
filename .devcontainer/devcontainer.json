@@ -1,0 +1,20 @@
+{
+    "name": "Rust Dev Container",
+    "dockerFile": "Dockerfile",
+    "remoteUser": "vscode",
+    "customizations": {
+        "vscode": {
+            "settings": {
+                "terminal.integrated.defaultProfile.linux": "bash"
+            },
+            "extensions": [
+                "rust-lang.rust-analyzer"
+            ]
+        }
+    },
+    "postCreateCommand": "cargo version",
+    "forwardPorts": [3000],
+    "mounts": [
+        "source=${localWorkspaceFolder},target=/workspace,type=bind,consistency=cached"
+    ]
+}

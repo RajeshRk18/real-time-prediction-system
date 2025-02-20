@@ -1,26 +1,20 @@
-use crate::misc::InputData;
+use feature_processing::misc::Features;
 use tokio::sync::mpsc;
 use futures_util::StreamExt;
-use tokio::sync::mpsc;
-use tokio::time::sleep;
 use rdkafka::{ClientConfig, message::Message};
 use rdkafka::consumer::{StreamConsumer, Consumer};
 use bincode;
-use serde::{Serialize, Deserialize};
 use anyhow::Result;
 use log::{info, error, debug};
-use std::str;
-use std::time::Duration;
 use polars::prelude::DataFrame;
 
 pub struct KafkaConsumer {
     consumer: StreamConsumer,
-    handler: mpsc::Receiver<DataFrame>,
-    processor_handler: mpsc::Sender<InputData>,
+    processor_handler: mpsc::Sender<Features>,
 }
 
 impl KafkaConsumer {
-    pub async fn new(handler: mpsc::Receiver<InputData>, processor_handler: mpsc::Sender<InputData>) -> Result<Self> {
+    pub async fn new(processor_handler: mpsc::Sender<Features>) -> Result<Self> {
         let consumer: StreamConsumer = ClientConfig::new()
         .set("group.id", "feature-engineering-group")
         .set("bootstrap.servers", "kafka:9092")
@@ -35,7 +29,6 @@ impl KafkaConsumer {
 
         Ok(Self {
             consumer,
-            handler,
             processor_handler,
         })
     }
@@ -47,9 +40,9 @@ impl KafkaConsumer {
             match message_result {
                 Ok(msg) => {
                     if let Some(payload) = msg.payload() {
-                        let data: InputData = bincode::deserialize(payload)?;
+                        let data: Features = bincode::deserialize(payload)?;
                         // Perform feature processing 
-                        self.processor.send(data).await?;
+                        self.processor_handler.send(data).await?;
                     
                     } else {
                         debug!("Received message with empty payload");

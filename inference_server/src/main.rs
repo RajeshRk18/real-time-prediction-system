@@ -10,6 +10,7 @@ use data_ingestion::logger::init_logger;
 use tokio::sync::mpsc;
 use tokio::signal;
 use anyhow::Result;
+use log::*;
 
 struct Pipeline {
     feat_consumer: KafkaConsumer,
@@ -23,13 +24,15 @@ impl Pipeline {
         let (output_tx, output_rx) = mpsc::channel(1000);
 
         Ok(Self {
-            data_consumer: KafkaConsumer::new(input_tx)?,
-            feat_producer: InferenceEngine::new("FEATURES", feature_rx)?,
-            server: Server::init(output_rx)?,
+            feat_consumer: KafkaConsumer::new(feature_tx).await?,
+            inference: InferenceEngine::new(feature_rx, output_tx)?,
+            server: Server::init(output_rx),
         })
     }
 
     async fn run(&mut self) -> Result<()> {
+        self.server.run().await?;
+
         loop {
             tokio::select! {
                 // Handle shutdown signal
@@ -53,16 +56,9 @@ impl Pipeline {
                 }
                 // Output receive handler
                 res = self.server.receive_output() => {
-                    if let Err(e) = res {
+                    if let Err(_) = res {
                         break;
                     }                    
-                }
-                // API Server
-                res = self.serve.run() => {
-                    if let Err(e) = res {
-                        error!("Processor failed: {:?}", e);
-                        break;
-                    }
                 }
             }
         }
@@ -72,10 +68,10 @@ impl Pipeline {
 }
 
 #[tokio::main]
-async fn main() {
+async fn main() -> Result<()>{
     init_logger();
 
-    let mut pipeline = Pipeline::new()?;
+    let mut pipeline = Pipeline::new().await?;
 
     pipeline.run().await?;
 

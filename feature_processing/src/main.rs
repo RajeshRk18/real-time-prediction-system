@@ -1,15 +1,16 @@
 mod consumer;
 mod processor;
 mod misc;
+mod feature_producer;
 
 use crate::consumer::KafkaConsumer;
 use crate::feature_producer::KafkaProducer;
 use crate::processor::WindowedMarketDataStream;
-use crate::misc::*;
 use data_ingestion::logger::init_logger;
 use tokio::sync::mpsc;
 use tokio::signal;
 use anyhow::Result;
+use log::*;
 
 struct Pipeline {
     data_consumer: KafkaConsumer,
@@ -23,9 +24,9 @@ impl Pipeline {
         let (feature_tx, feature_rx) = mpsc::channel(1000);
 
         Ok(Self {
-            data_consumer: KafkaConsumer::new(input_tx)?,
-            feat_producer: KafkaProducer::new("FEATURES", feature_rx)?,
-            processor: WindowedMarketDataStream::init(input_rx, feature_tx)?,
+            data_consumer: KafkaConsumer::new(input_tx).await?,
+            feat_producer: KafkaProducer::new("FEATURES", feature_rx).await?,
+            processor: WindowedMarketDataStream::init(input_rx, feature_tx),
         })
     }
 
@@ -106,7 +107,8 @@ impl Pipeline {
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    let mut pipeline = Pipeline::new()?;
+    init_logger();
+    let mut pipeline = Pipeline::new().await?;
 
     pipeline.run().await?;
 

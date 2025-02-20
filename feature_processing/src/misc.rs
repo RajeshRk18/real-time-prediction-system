@@ -1,14 +1,5 @@
 use serde::{Serialize, Deserialize};
 
-#[derive(Debug, Default, Serialize, Deserialize)]
-pub struct InputData {
-    pub open: f64,
-    pub high: f64,
-    pub low: f64,
-    pub close: f64,
-    pub vol: i64,
-}
-
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Features {
     pub price_change: f64,
