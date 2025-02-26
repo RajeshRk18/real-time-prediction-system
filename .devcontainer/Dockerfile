@@ -1,7 +1,7 @@
 FROM rust:latest
 
 RUN apt-get update && apt-get install -y \
-    libssl-dev pkg-config clang curl \
+    libssl-dev pkg-config clang curl protobuf-compiler \
     && rm -rf /var/lib/apt/lists/*
 
 # Create a non-root user for VS Code
